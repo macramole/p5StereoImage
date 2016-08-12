@@ -1,7 +1,7 @@
 # p5-stereo-image
 I'm a tool for making stereoscopic GIFs using image maps. The process is much smoother using this tool than using just Gimp or Photoshop.
 
-![GUI](https://macramole.github.com/p5-stereo-image/gui.jpg)
+![GUI](https://raw.githubusercontent.com/macramole/p5-stereo-image/master/gui.jpg)
 
 # features
 * WYSIWYG tool for making stereoscopic GIFs
