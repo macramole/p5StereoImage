@@ -27,12 +27,8 @@ boolean processingFrames = false;
 
 int GUI_WIDTH = 100;
 
-// final String FILENAME_IMAGE = "image.jpg";
-// final String FILENAME_MAP = "image_map.png";
-// final String FILENAME_IMAGE = "image2.jpg";
-// final String FILENAME_MAP = "image2_map.png";
-final String FILENAME_IMAGE = "image3.jpg";
-final String FILENAME_MAP = "image3_map.png";
+final String FILENAME_IMAGE = "example.jpg";
+final String FILENAME_MAP = "example_map.png";
 long lastModified = 0;
 
 final String SAVE_PATH = "saved/";
@@ -41,14 +37,16 @@ ColorReduction colorReduction;
 int currentDitheringAlgorithm = 1;//ColorReduction.ORDERED;
 
 void setup() {
-    // size( 640 , 760 );
-    // size( 800 , 600 );
-    size( 681 , 775 );
+    
+    size( 400 , 400 );
     processedImages = new PImage[framesQty];
     scanLines = createGraphics(width - GUI_WIDTH, height);
 
     image = loadImage(FILENAME_IMAGE);
-
+    
+    surface.setResizable(true);
+    surface.setSize(image.width + GUI_WIDTH, image.height);
+  
     setColorReduction(16);
 
     updateScanLines();

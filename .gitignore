@@ -1,5 +1,3 @@
 build/
-data/*.png
-data/*.jpg
-data/*.xcf
+data/all/
 saved/*.gif
