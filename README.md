@@ -27,7 +27,7 @@ I'm a tool for making stereoscopic GIFs using image maps. The process is much sm
 8. you can change you imagemap using Gimp or any other image software and the changes will be reflected as you save. pretty neat.
 
 # what is an image map
-a grayscale image from the same size as your source image. darker gray sections will move less than lighter gray. using HSV color encoding, I recommend to go from 50% of VALUE to 100% (white).
+a grayscale image with the same size as your source image. darker gray sections will move less than lighter gray. using HSV color encoding, I recommend to go from 50% of VALUE to 100% (white).
 
 # improvements
 right now it works somehow slow. there is a lot of room for improvement
