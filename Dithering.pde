@@ -141,8 +141,6 @@ class Dithering {
 		return result;
 	}
 
-
-
 	private color findClosestColor(color in, color[] palette) {
 	  PVector[] vpalette = new PVector[palette.length];
 	//   PVector vcolor = new PVector( (in >> 16 & 0xFF), (in >> 8 & 0xFF), (in & 0xFF));

@@ -13,9 +13,11 @@ int currentImage = 0;
 int currentDirection = 1;
 
 final int DEFAULT_DEPTH = 5;
-int depth = 5;
+final int DEFAULT_FRAMERATE = 7;
+int depth = DEFAULT_DEPTH;
 int framesQty = 3;
 int gifQuality = 10;
+int currentFrameRate = DEFAULT_FRAMERATE;
 
 PGraphics scanLines;
 int scanLineOpacity = 76;
@@ -34,29 +36,28 @@ long lastModified = 0;
 final String SAVE_PATH = "saved/";
 
 ColorReduction colorReduction;
-int currentDitheringAlgorithm = 1;//ColorReduction.ORDERED;
+int currentDitheringAlgorithm = ColorReduction.FLOYD_STEINBERG;
 
 void setup() {
-    
+
     size( 400 , 400 );
     processedImages = new PImage[framesQty];
     scanLines = createGraphics(width - GUI_WIDTH, height);
 
     image = loadImage(FILENAME_IMAGE);
-    
+
     surface.setResizable(true);
     surface.setSize(image.width + GUI_WIDTH, image.height);
-  
+
     setColorReduction(16);
 
     updateScanLines();
     checkForNewerMap(true);
 
     createGui();
-
-    frameRate(7);
 }
 
+/*** GUI ***/
 void createGui() {
     cp5 = new ControlP5(this);
     cp5.enableShortcuts();
@@ -65,25 +66,28 @@ void createGui() {
        .setPosition(10,10)
        .setSize(80,20)
        .setRange(3,15)
+       .setTriggerEvent(Slider.RELEASE)
        .setNumberOfTickMarks(7)
        .setColorTickMark(color(0,0))
-       .getCaptionLabel().align(ControlP5.LEFT, ControlP5.BOTTOM_OUTSIDE);
+       .getCaptionLabel().align(ControlP5.LEFT, ControlP5.BOTTOM_OUTSIDE)
        ;
     cp5.addSlider("framerate")
        .setPosition(10,55)
        .setSize(80,20)
        .setRange(1,30)
-       .setValue(7)
+       .setValue(DEFAULT_FRAMERATE)
+       .setTriggerEvent(Slider.RELEASE)
        .setColorTickMark(color(0,0))
-       .getCaptionLabel().align(ControlP5.LEFT, ControlP5.BOTTOM_OUTSIDE);
+       .getCaptionLabel().align(ControlP5.LEFT, ControlP5.BOTTOM_OUTSIDE)
        ;
     cp5.addSlider("depth")
        .setPosition(10,100)
        .setSize(80,20)
        .setRange(1,20)
        .setValue(DEFAULT_DEPTH)
+       .setTriggerEvent(Slider.RELEASE)
        .setColorTickMark(color(0,0))
-       .getCaptionLabel().align(ControlP5.LEFT, ControlP5.BOTTOM_OUTSIDE);
+       .getCaptionLabel().align(ControlP5.LEFT, ControlP5.BOTTOM_OUTSIDE)
        ;
 
     cp5.addSlider("scanLineOpacity")
@@ -91,6 +95,7 @@ void createGui() {
        .setSize(80,20)
        .setRange(0,255)
        .setValue(scanLineOpacity)
+       .setTriggerEvent(Slider.RELEASE)
        .setColorTickMark(color(0,0))
        .getCaptionLabel().align(ControlP5.LEFT, ControlP5.BOTTOM_OUTSIDE);
        ;
@@ -99,6 +104,7 @@ void createGui() {
        .setSize(80,20)
        .setRange(2,10)
        .setValue(2)
+       .setTriggerEvent(Slider.RELEASE)
        .setColorTickMark(color(0,0))
        .getCaptionLabel().align(ControlP5.LEFT, ControlP5.BOTTOM_OUTSIDE);
        ;
@@ -112,55 +118,62 @@ void createGui() {
        .setSize(80,20)
        .setRange(100,255)
        .setValue(255)
+       .setTriggerEvent(Slider.RELEASE)
        .setColorTickMark(color(0,0))
        .getCaptionLabel().align(ControlP5.LEFT, ControlP5.BOTTOM_OUTSIDE);
        ;
 
-    cp5.addSlider("gifQuality")
-       .setPosition(10,420)
-       .setSize(80,20)
-       .setRange(1,20)
-       .setValue(10)
-       .setColorTickMark(color(0,0))
-       .getCaptionLabel().align(ControlP5.LEFT, ControlP5.BOTTOM_OUTSIDE);
-       ;
+    // cp5.addSlider("gifQuality")
+    //    .setPosition(10,420)
+    //    .setSize(80,20)
+    //    .setRange(1,20)
+    //    .setValue(10)
+    //    .setTriggerEvent(Slider.RELEASE)
+    //    .setColorTickMark(color(0,0))
+    //    .getCaptionLabel().align(ControlP5.LEFT, ControlP5.BOTTOM_OUTSIDE);
+    //    ;
+    CColor makeGifColor = new CColor();
+    makeGifColor.setCaptionLabel( color(0,0,0) );
+    makeGifColor.setBackground( color(1,184,81) );
+    makeGifColor.setForeground( color(1,222,98) );
+    makeGifColor.setActive( color(1,255,113) );
+
     cp5.addButton("makeGif")
-       .setPosition(10,465)
+       .setPosition(10,435)
        .setSize(80,20)
+       .setColor( makeGifColor )
        ;
 
-  
+    DropdownList d = cp5.addDropdownList("dithering");
+    d.setPosition(10,380);
+    d.setItemHeight(20);
+    d.setBarHeight(20);
+    d.setWidth(GUI_WIDTH - 18);
+    d.close();
+    d.addItem("Floyd Steinberg", ColorReduction.FLOYD_STEINBERG);
+    d.addItem("Atkinson", ColorReduction.ATKINSON);
+    d.addItem("Ordered", ColorReduction.ORDERED);
+    d.addItem("Random", ColorReduction.RANDOM);
 
-   DropdownList d = cp5.addDropdownList("dithering");
-   d.setPosition(10,380);
-   d.setItemHeight(20);
-   d.setBarHeight(20);
-   d.setWidth(GUI_WIDTH - 18);
-   d.close();
-   d.addItem("Floyd Steinberg", 0);
-   d.addItem("Atkinson", 1);
-   d.addItem("Ordered", 2);
-   d.addItem("Random", 3);
+    DropdownList c = cp5.addDropdownList("colors");
+    c.setPosition(10,350);
+    c.setItemHeight(20);
+    c.setBarHeight(20);
+    c.setWidth(GUI_WIDTH - 18);
+    c.close();
 
- DropdownList c = cp5.addDropdownList("colors");
-   c.setPosition(10,350);
-   c.setItemHeight(20);
-   c.setBarHeight(20);
-   c.setWidth(GUI_WIDTH - 18);
-   c.close();
-
-   for ( int i = 1 ; i <= 8 ; i++ ) {
+    for ( int i = 1 ; i <= 8 ; i++ ) {
        c.addItem(str(int(pow(2,i))),pow(2,i));
-   }
+    }
 
 
     fill(color(0));
 }
 void frames(int qty) {
-  setFramesQty(qty);
+    setFramesQty(qty);
 }
 void framerate(int f) {
-    frameRate(f);
+    currentFrameRate = f;
 }
 void depth(int qty) {
     depth = qty;
@@ -196,6 +209,10 @@ void dithering(int wha) {
     colorReduction.setDitheringAlgorithm(currentDitheringAlgorithm);
     processFrames();
 }
+/**************/
+
+
+
 void makeGif() {
     processingFrames = true;
     String date = (new SimpleDateFormat("yyyyMMddHHmmss")).format(new Date());
@@ -205,22 +222,21 @@ void makeGif() {
         "stereo-f" +
         framesQty +
         "-fr" +
-        round(frameRate) +
+        currentFrameRate +
         "-d" +
         depth +
         "-t" +
         date + ".gif";
 
-    println("making gif with quality: " + gifQuality);
     GifMaker gifExport = new GifMaker(this, filename, gifQuality);
     gifExport.setRepeat(0);
 
     for ( int i = 0 ; i < framesQty ; i++ ) {
-        gifExport.setDelay( round(1000 / frameRate) );
+        gifExport.setDelay( round(1000 / currentFrameRate) );
         gifExport.addFrame( processedImages[i] );
     }
     for ( int i = framesQty - 2 ; i > 0 ; i-- ) {
-        gifExport.setDelay( round(1000 / frameRate) );
+        gifExport.setDelay( round(1000 / currentFrameRate) );
         gifExport.addFrame( processedImages[i] );
     }
 
@@ -262,7 +278,6 @@ void processFrames() {
             pDepth = chunk;
         }
         processedImages[i] = processFrame(pDepth);
-        // println(i + " " + pDepth);
     }
 
     maxFirstPart += 1;
@@ -278,11 +293,9 @@ void processFrames() {
             pDepth = chunk;
         }
         processedImages[i] = processFrame(pDepth);
-        // println(i + " " + pDepth);
     }
 
     for ( int i = 0 ; i < framesQty ; i++ ) {
-        // drawScanLines( processedImages[i] );
         if (scanLineAnimate) {
             alphaScanLines( round(map(i, 0, framesQty, scanLineOpacity, scanLineMaxOpacity)) );
         }
@@ -305,7 +318,7 @@ void checkForNewerMap(boolean noDelay) {
         lastModified = newLastModified;
         processingFrames = true;
         if (!noDelay) {
-            delay(3000);
+            delay(3000); //wait a little bit so the image is fully written on disk
         }
         map = loadImage(FILENAME_MAP);
         processFrames();
@@ -316,21 +329,25 @@ void draw() {
 
     rect(0, 0, GUI_WIDTH, height);
     if ( !processingFrames ) {
+        if ( ( frameCount % Math.round(frameRate / currentFrameRate) ) == 0 ) {
+            try {
+                image(processedImages[currentImage], GUI_WIDTH + 1, 0);
+            } catch ( Exception e ) {
+                println(e);
+            }
 
-        try {
-            image(processedImages[currentImage], GUI_WIDTH + 1, 0);
-        } catch ( Exception e ) {
-            println(e);
+            if ( currentImage == framesQty - 1 ) {
+                currentDirection = -1;
+            } else if ( currentImage == 0 ) {
+                currentDirection = 1;
+                checkForNewerMap();
+            }
+
+            currentImage += 1 * currentDirection;
         }
-
-        if ( currentImage == framesQty - 1 ) {
-            currentDirection = -1;
-        } else if ( currentImage == 0 ) {
-            currentDirection = 1;
-            checkForNewerMap();
-        }
-
-        currentImage += 1 * currentDirection;
+    } else {
+        rect(GUI_WIDTH + 1, 0, width, height);
+        println("not processing");
     }
 }
 
@@ -461,8 +478,6 @@ PImage processFrame(float depth) {
     return frame;
 }
 
-
-
 void keyPressed() {
-    // addFramesQty(2);
+
 }
